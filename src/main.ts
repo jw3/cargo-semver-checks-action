@@ -15,6 +15,8 @@ import {
 } from "./utils";
 import { RustdocCache } from "./rustdoc-cache";
 
+declare const process: { env: Record<string, string> }
+
 const CARGO_TARGET_DIR = path.join("semver-checks", "target");
 
 async function getCheckReleaseArguments(): Promise<string[]> {
@@ -125,7 +127,11 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
     // need to set the target directory explicitly.
     process.env["CARGO_TARGET_DIR"] = CARGO_TARGET_DIR;
 
-    await cargo.call(["semver-checks", "check-release"].concat(await getCheckReleaseArguments()));
+    const finalOptions = await getCheckReleaseArguments();
+
+    core.error('finaloptions:')
+    core.error(JSON.stringify(finalOptions))
+    await cargo.call(["semver-checks", "check-release"].concat(finalOptions));
 }
 
 async function installCargoSemverChecksFromPrecompiledBinary(): Promise<void> {
