@@ -28,7 +28,7 @@ async function getCheckReleaseArguments(): Promise<string[]> {
         getFeatureGroup(rustCore.input.getInput("feature-group")),
         optionFromList("--features", rustCore.input.getInputList("features")),
         rustCore.input.getInputBool("verbose") ? ["--verbose"] : [],
-        await pr(rustCore.input.getInputBoolean('pr')),
+        await pr(rustCore.input.getInputBool('pr')),
     ].flat();
 }
 
