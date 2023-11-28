@@ -4,6 +4,7 @@ import * as github from "@actions/github";
 import * as io from "@actions/io";
 import * as toolCache from "@actions/tool-cache";
 import * as rustCore from "@actions-rs/core";
+import * as exec from '@actions/exec';
 
 import {
     getErrorMessage,
@@ -16,7 +17,7 @@ import { RustdocCache } from "./rustdoc-cache";
 
 const CARGO_TARGET_DIR = path.join("semver-checks", "target");
 
-function getCheckReleaseArguments(): string[] {
+async function getCheckReleaseArguments(): Promise<string[]> {
     return [
         optionFromList("--package", rustCore.input.getInputList("package")),
         optionFromList("--exclude", rustCore.input.getInputList("exclude")),
@@ -25,7 +26,26 @@ function getCheckReleaseArguments(): string[] {
         getFeatureGroup(rustCore.input.getInput("feature-group")),
         optionFromList("--features", rustCore.input.getInputList("features")),
         rustCore.input.getInputBool("verbose") ? ["--verbose"] : [],
+        await pr(rustCore.input.getInputBoolean('pr')),
     ].flat();
+}
+
+async function pr(isPullRequest: boolean): Promise<string[]> {
+    if (isPullRequest) {
+        const currentBranch = process.env['GITHUB_HEAD_REF'];
+        const baseBranch = process.env['GITHUB_BASE_REF'];
+        let mergeBase = "";
+        await exec.exec(`git`, ['merge-base', currentBranch, baseBranch], {
+            listeners: {
+                stdout: (data: Buffer) => {
+                    mergeBase += data.toString();
+                }
+            }
+        });
+        return ['--baseline-rev', mergeBase]
+    } else {
+        return []
+    }
 }
 
 function getFeatureGroup(name = ""): string[] {
@@ -105,7 +125,7 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
     // need to set the target directory explicitly.
     process.env["CARGO_TARGET_DIR"] = CARGO_TARGET_DIR;
 
-    await cargo.call(["semver-checks", "check-release"].concat(getCheckReleaseArguments()));
+    await cargo.call(["semver-checks", "check-release"].concat(await getCheckReleaseArguments()));
 }
 
 async function installCargoSemverChecksFromPrecompiledBinary(): Promise<void> {

@@ -23,6 +23,10 @@ inputs:
     description: 'Enables verbose output of `cargo-semver-checks`.'
     required: true
     default: 'false'
+  pr:
+    description: 'Enables pr-mode of `cargo-semver-checks`.'
+    required: true
+    default: 'false'
   release-type:
     description: 'Sets the release type instead of deriving it from the version number specified in the `Cargo.toml` file.'
     required: false
