@@ -239,7 +239,13 @@ async function run(): Promise<void> {
 
     const cargo = await rustCore.Cargo.get();
 
-    await installCargoSemverChecks(cargo);
+    // await installCargoSemverChecks(cargo);
+    await runCommand("git", ["clone", "https://github.com/u9g/cargo-semver-checks"]);
+    await runCommand("cd", ["cargo-semver-checks"]);
+    await runCommand("git", ["switch", "-f", "output-json"]);
+    await runCommand("cargo", ["install", "--path", "."]);
+    await runCommand("cd", [".."]);
+    await runCommand("rm", ["rm", "-rf", "cargo-semver-checks"]);
 
     const cache = new RustdocCache(
         cargo,
