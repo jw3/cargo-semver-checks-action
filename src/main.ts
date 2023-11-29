@@ -198,6 +198,8 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
 
     const absPathToHere = path.resolve(".");
 
+    core.info("path to replace: " + absPathToHere);
+
     if (returnCode !== 0) {
         const results = JSON.parse(await fsp.readFile("./output.json", "utf-8"));
         for (const result of results) {
