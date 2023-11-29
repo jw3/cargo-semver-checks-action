@@ -30,7 +30,8 @@ async function runCommand(command: string, args: string[]): Promise<CommandOutpu
 }
 
 async function _runCommand(
-    cb: (options: exec.ExecOptions) => Promise<number>
+    cb: (options: exec.ExecOptions) => Promise<number>,
+    additionalOptions: Partial<exec.ExecOptions> = {}
 ): Promise<CommandOutput> {
     let stdout = "";
     let stderr = "";
@@ -43,6 +44,7 @@ async function _runCommand(
                 stderr += data.toString();
             },
         },
+        ...additionalOptions,
     };
 
     const returnCode = await cb(options);
@@ -172,8 +174,13 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
         );
     }
 
-    const { returnCode, stdout } = await _runCommand((execOptions) =>
-        cargo.call(["semver-checks", "check-release"].concat(cargoSemverChecksOptions), execOptions)
+    const { returnCode, stdout } = await _runCommand(
+        (execOptions) =>
+            cargo.call(
+                ["semver-checks", "check-release"].concat(cargoSemverChecksOptions),
+                execOptions
+            ),
+        { ignoreReturnCode: true }
     );
 
     core.error("ran with error code: " + returnCode);
