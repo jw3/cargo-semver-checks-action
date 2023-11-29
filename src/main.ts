@@ -188,15 +188,11 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
                 ["semver-checks", "check-release"].concat(cargoSemverChecksOptions),
                 execOptions
             ),
-        { ignoreReturnCode: true }
+        { ignoreReturnCode: true } // ignore the return code so that we can still make a comment then we can fail the workflow
     );
-
-    core.error("ran with error code: " + returnCode);
 
     if (returnCode !== 0) {
         try {
-            const githubToken = core.getInput("GITHUB_TOKEN");
-
             const context = github.context;
             if (context.payload.pull_request == null) {
                 core.setFailed("No pull request found.");
@@ -204,7 +200,7 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
             }
             const pull_request_number = context.payload.pull_request.number;
 
-            const octokit = github.getOctokit(githubToken);
+            const octokit = github.getOctokit(getGitHubToken());
             await octokit.rest.issues.createComment({
                 ...context.repo,
                 issue_number: pull_request_number,
@@ -212,6 +208,8 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
                     "<!-- Comment made by Cargo Semver Cheks. (Please don't remove this comment or the action won't be able to update the comment) -->\n" +
                     stdout,
             });
+
+            core.setFailed("Cargo-Semver-Checks detected API breakage.");
         } catch (error) {
             core.setFailed(getErrorMessage(error));
         }
