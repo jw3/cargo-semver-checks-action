@@ -49,7 +49,7 @@ async function pr(isPullRequest: boolean): Promise<string[]> {
                 },
             },
         });
-        return ["--baseline-rev", mergeBase];
+        return ["--baseline-rev", mergeBase.trim()];
     } else {
         return [];
     }
