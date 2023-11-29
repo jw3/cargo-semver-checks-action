@@ -34,7 +34,9 @@ async function getCheckReleaseArguments(): Promise<string[]> {
 
 async function pr(isPullRequest: boolean): Promise<string[]> {
     if (isPullRequest) {
+        await exec.exec("git branch --all");
         await exec.exec("git fetch --all");
+        await exec.exec("git branch --all");
         await exec.exec(`git switch -f ${process.env["GITHUB_HEAD_REF"]}`);
 
         const currentBranch = process.env["GITHUB_HEAD_REF"];
