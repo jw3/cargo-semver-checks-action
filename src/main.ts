@@ -176,6 +176,8 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
         cargo.call(["semver-checks", "check-release"].concat(cargoSemverChecksOptions), execOptions)
     );
 
+    core.error("ran with error code: " + returnCode);
+
     if (returnCode !== 0) {
         try {
             const githubToken = core.getInput("GITHUB_TOKEN");
@@ -196,7 +198,7 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
                     stdout,
             });
         } catch (error) {
-            core.setFailed(JSON.stringify(error));
+            core.setFailed(getErrorMessage(error));
         }
     }
 }
