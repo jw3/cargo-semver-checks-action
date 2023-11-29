@@ -5,6 +5,7 @@ import * as io from "@actions/io";
 import * as toolCache from "@actions/tool-cache";
 import * as rustCore from "@actions-rs/core";
 import * as exec from "@actions/exec";
+import * as fsp from "fs/promises";
 
 import {
     getErrorMessage,
@@ -191,8 +192,18 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
         { ignoreReturnCode: true } // ignore the return code so that we can still make a comment then we can fail the workflow
     );
 
+    const absPathToHere = path.resolve(".");
+
     if (returnCode !== 0) {
-        runCommand("echo", ["::error file=src/lib.rs,line=1,col=1::Broke semver!"]);
+        const results = JSON.parse(await fsp.readFile("./output.json", "utf-8"));
+        for (const result of results) {
+            await runCommand("echo", [
+                `::error file=${result.file.replace(absPathToHere, "")},line=${
+                    result.line
+                },col=1::${result.message}`,
+            ]);
+        }
+        await io.rmRF("./output.json");
     }
 }
 
