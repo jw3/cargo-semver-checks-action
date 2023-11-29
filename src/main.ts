@@ -72,7 +72,7 @@ async function pr(isPullRequest: boolean): Promise<string[]> {
 
         // Switch to the branch we want to compare against.
 
-        await runCommand("git", ["switch", "-f", `origin/${prBranchesFrom}`]);
+        await runCommand("git", ["switch", "-f", `${currentBranch}`]);
 
         const mergeBase = (
             await runCommand("git", [
