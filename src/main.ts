@@ -36,6 +36,7 @@ async function pr(isPullRequest: boolean): Promise<string[]> {
     if (isPullRequest) {
         // ensure we have all the branches
         await exec.exec("git fetch --all");
+        await exec.exec("git branch");
 
         const currentBranch = process.env["GITHUB_HEAD_REF"];
         const baseBranch = process.env["GITHUB_BASE_REF"];
