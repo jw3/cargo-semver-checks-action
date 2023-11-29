@@ -19,6 +19,27 @@ declare const process: { env: Record<string, string> };
 
 const CARGO_TARGET_DIR = path.join("semver-checks", "target");
 
+async function runCommand(
+    command: string,
+    args: string[]
+): Promise<{ stdout: string; stderr: string }> {
+    let stdout = "";
+    let stderr = "";
+    const options = {
+        listeners: {
+            stdout: (data: Buffer) => {
+                stdout += data.toString();
+            },
+            stderr: (data: Buffer) => {
+                stderr += data.toString();
+            },
+        },
+    };
+    await exec.exec(command, args, options);
+
+    return { stdout, stderr };
+}
+
 async function getCheckReleaseArguments(): Promise<string[]> {
     return [
         optionFromList("--package", rustCore.input.getInputList("package")),
@@ -34,21 +55,22 @@ async function getCheckReleaseArguments(): Promise<string[]> {
 
 async function pr(isPullRequest: boolean): Promise<string[]> {
     if (isPullRequest) {
-        await exec.exec(`git fetch origin ${process.env["GITHUB_HEAD_REF"]}`);
-        await exec.exec(`git fetch origin ${process.env["GITHUB_BASE_REF"]}`);
+        const currentBranch = process.env["GITHUB_HEAD_REF"];
+        const prBranchesFrom = process.env["GITHUB_BASE_REF"];
+        await runCommand("git", ["fetch", "origin", `${currentBranch}`]);
+        await runCommand("git", ["fetch", "origin", `${prBranchesFrom}`]);
 
-        await exec.exec(`git switch -f ${process.env["GITHUB_HEAD_REF"]}`);
+        // Switch to the branch we want to compare against.
 
-        const currentBranch = `remotes/origin/${process.env["GITHUB_HEAD_REF"]}`;
-        const baseBranch = `remotes/origin/${process.env["GITHUB_BASE_REF"]}`;
-        let mergeBase = "";
-        await exec.exec(`git`, ["merge-base", currentBranch, baseBranch], {
-            listeners: {
-                stdout: (data: Buffer) => {
-                    mergeBase += data.toString();
-                },
-            },
-        });
+        await runCommand("git", ["switch", "-f", `origin/${prBranchesFrom}`]);
+
+        const mergeBase = (
+            await runCommand("git", [
+                "merge-base",
+                `remotes/origin/${currentBranch}`,
+                `remotes/origin/${prBranchesFrom}`,
+            ])
+        ).stdout.trim(); // trim ending newline from command output
         return ["--baseline-rev", mergeBase.trim()];
     } else {
         return [];
@@ -135,7 +157,7 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
     const finalOptions = await getCheckReleaseArguments();
 
     if (core.isDebug()) {
-        core.debug("finaloptions: " + JSON.stringify(finalOptions));
+        core.debug("options passed to cargo-semver-checks: " + JSON.stringify(finalOptions));
     }
     await cargo.call(["semver-checks", "check-release"].concat(finalOptions));
 }
