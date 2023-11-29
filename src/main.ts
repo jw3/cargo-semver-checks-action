@@ -203,10 +203,9 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
     if (returnCode !== 0) {
         const results = JSON.parse(await fsp.readFile("./output.json", "utf-8"));
         for (const result of results) {
+            const path = result.file.replace(absPathToHere, "").split("/").slice(6).join("/"); // TODO: ensure & test this
             await runCommand("echo", [
-                `::error file=${result.file.replace(absPathToHere, "")},line=${
-                    result.line
-                },col=1::${result.message}`,
+                `::error file=${path},line=${result.line},col=1::${result.message}`,
             ]);
         }
         await io.rmRF("./output.json");
