@@ -34,9 +34,7 @@ async function getCheckReleaseArguments(): Promise<string[]> {
 
 async function pr(isPullRequest: boolean): Promise<string[]> {
     if (isPullRequest) {
-        await exec.exec("git branch --all");
         await exec.exec("git fetch --all");
-        await exec.exec("git branch --all");
         await exec.exec(`git switch -f ${process.env["GITHUB_HEAD_REF"]}`);
 
         const currentBranch = `remotes/origin/${process.env["GITHUB_HEAD_REF"]}`;
@@ -134,8 +132,9 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
 
     const finalOptions = await getCheckReleaseArguments();
 
-    core.error("finaloptions:");
-    core.error(JSON.stringify(finalOptions));
+    if (core.isDebug()) {
+        core.debug("finaloptions: " + JSON.stringify(finalOptions));
+    }
     await cargo.call(["semver-checks", "check-release"].concat(finalOptions));
 }
 
