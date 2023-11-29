@@ -4,7 +4,7 @@ import * as github from "@actions/github";
 import * as io from "@actions/io";
 import * as toolCache from "@actions/tool-cache";
 import * as rustCore from "@actions-rs/core";
-import * as exec from '@actions/exec';
+import * as exec from "@actions/exec";
 
 import {
     getErrorMessage,
@@ -15,7 +15,7 @@ import {
 } from "./utils";
 import { RustdocCache } from "./rustdoc-cache";
 
-declare const process: { env: Record<string, string> }
+declare const process: { env: Record<string, string> };
 
 const CARGO_TARGET_DIR = path.join("semver-checks", "target");
 
@@ -28,25 +28,25 @@ async function getCheckReleaseArguments(): Promise<string[]> {
         getFeatureGroup(rustCore.input.getInput("feature-group")),
         optionFromList("--features", rustCore.input.getInputList("features")),
         rustCore.input.getInputBool("verbose") ? ["--verbose"] : [],
-        await pr(rustCore.input.getInputBool('pr')),
+        await pr(rustCore.input.getInputBool("pr")),
     ].flat();
 }
 
 async function pr(isPullRequest: boolean): Promise<string[]> {
     if (isPullRequest) {
-        const currentBranch = process.env['GITHUB_HEAD_REF'];
-        const baseBranch = process.env['GITHUB_BASE_REF'];
+        const currentBranch = process.env["GITHUB_HEAD_REF"];
+        const baseBranch = process.env["GITHUB_BASE_REF"];
         let mergeBase = "";
-        await exec.exec(`git`, ['merge-base', currentBranch, baseBranch], {
+        await exec.exec(`git`, ["merge-base", currentBranch, baseBranch], {
             listeners: {
                 stdout: (data: Buffer) => {
                     mergeBase += data.toString();
-                }
-            }
+                },
+            },
         });
-        return ['--baseline-rev', mergeBase]
+        return ["--baseline-rev", mergeBase];
     } else {
-        return []
+        return [];
     }
 }
 
@@ -129,8 +129,8 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
 
     const finalOptions = await getCheckReleaseArguments();
 
-    core.error('finaloptions:')
-    core.error(JSON.stringify(finalOptions))
+    core.error("finaloptions:");
+    core.error(JSON.stringify(finalOptions));
     await cargo.call(["semver-checks", "check-release"].concat(finalOptions));
 }
 

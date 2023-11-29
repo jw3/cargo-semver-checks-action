@@ -4,7 +4,7 @@
   "description": "Lint your crate API changes for semver violations.",
   "main": "index.js",
   "scripts": {
-    "build": "ncc build src/main.ts --license licenses.txt --minify",
+    "build": "ncc build src/main.ts -t --license licenses.txt --minify",
     "format": "prettier --write src/**/*.ts",
     "format-check": "prettier --check src/**/*.ts",
     "lint": "eslint src/**/*.ts",
