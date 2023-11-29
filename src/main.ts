@@ -91,7 +91,7 @@ async function pr(isPullRequest: boolean): Promise<string[]> {
                 `remotes/origin/${prBranchesFrom}`,
             ])
         ).stdout.trim(); // trim ending newline from command output
-        return ["--baseline-rev", mergeBase.trim()];
+        return ["--baseline-rev", mergeBase.trim(), "--json"];
     } else {
         return [];
     }
@@ -182,7 +182,7 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
         );
     }
 
-    const { returnCode, stdout } = await _runCommand(
+    const { returnCode } = await _runCommand(
         (execOptions) =>
             cargo.call(
                 ["semver-checks", "check-release"].concat(cargoSemverChecksOptions),
