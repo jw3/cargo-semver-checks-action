@@ -80,6 +80,10 @@ async function pr(isPullRequest: boolean): Promise<string[]> {
 
         await runCommand("git", ["switch", "-f", `${currentBranch}`]);
 
+        if (core.isDebug()) {
+            core.debug((await runCommand("git", ["log", "--oneline"])).stdout);
+        }
+
         const mergeBase = (
             await runCommand("git", [
                 "merge-base",
