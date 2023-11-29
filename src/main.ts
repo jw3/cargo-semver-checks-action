@@ -72,6 +72,10 @@ async function pr(isPullRequest: boolean): Promise<string[]> {
         await runCommand("git", ["fetch", "origin", `${currentBranch}`]);
         await runCommand("git", ["fetch", "origin", `${prBranchesFrom}`]);
 
+        if (core.isDebug()) {
+            core.debug((await runCommand("git", ["branch", "-a"])).stdout);
+        }
+
         // Switch to the branch we want to compare against.
 
         await runCommand("git", ["switch", "-f", `${currentBranch}`]);
