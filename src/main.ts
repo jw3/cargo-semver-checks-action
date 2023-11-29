@@ -39,8 +39,8 @@ async function pr(isPullRequest: boolean): Promise<string[]> {
         await exec.exec("git branch --all");
         await exec.exec(`git switch -f ${process.env["GITHUB_HEAD_REF"]}`);
 
-        const currentBranch = process.env["GITHUB_HEAD_REF"];
-        const baseBranch = process.env["GITHUB_BASE_REF"];
+        const currentBranch = `remotes/origin/${process.env["GITHUB_HEAD_REF"]}`;
+        const baseBranch = `remotes/origin/${process.env["GITHUB_BASE_REF"]}`;
         let mergeBase = "";
         await exec.exec(`git`, ["merge-base", currentBranch, baseBranch], {
             listeners: {
