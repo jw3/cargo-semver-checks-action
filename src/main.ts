@@ -19,10 +19,19 @@ declare const process: { env: Record<string, string> };
 
 const CARGO_TARGET_DIR = path.join("semver-checks", "target");
 
-async function runCommand(
-    command: string,
-    args: string[]
-): Promise<{ stdout: string; stderr: string }> {
+interface CommandOutput {
+    stdout: string;
+    stderr: string;
+    returnCode: number;
+}
+
+async function runCommand(command: string, args: string[]): Promise<CommandOutput> {
+    return await _runCommand((options) => exec.exec(command, args, options));
+}
+
+async function _runCommand(
+    cb: (options: exec.ExecOptions) => Promise<number>
+): Promise<CommandOutput> {
     let stdout = "";
     let stderr = "";
     const options = {
@@ -35,9 +44,10 @@ async function runCommand(
             },
         },
     };
-    await exec.exec(command, args, options);
 
-    return { stdout, stderr };
+    const returnCode = await cb(options);
+
+    return { stdout, stderr, returnCode };
 }
 
 async function getCheckReleaseArguments(): Promise<string[]> {
@@ -154,12 +164,41 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
     // need to set the target directory explicitly.
     process.env["CARGO_TARGET_DIR"] = CARGO_TARGET_DIR;
 
-    const finalOptions = await getCheckReleaseArguments();
+    const cargoSemverChecksOptions = await getCheckReleaseArguments();
 
     if (core.isDebug()) {
-        core.debug("options passed to cargo-semver-checks: " + JSON.stringify(finalOptions));
+        core.debug(
+            "options passed to cargo-semver-checks: " + JSON.stringify(cargoSemverChecksOptions)
+        );
     }
-    await cargo.call(["semver-checks", "check-release"].concat(finalOptions));
+
+    const { returnCode, stdout } = await _runCommand((execOptions) =>
+        cargo.call(["semver-checks", "check-release"].concat(cargoSemverChecksOptions), execOptions)
+    );
+
+    if (returnCode !== 0) {
+        try {
+            const githubToken = core.getInput("GITHUB_TOKEN");
+
+            const context = github.context;
+            if (context.payload.pull_request == null) {
+                core.setFailed("No pull request found.");
+                return;
+            }
+            const pull_request_number = context.payload.pull_request.number;
+
+            const octokit = github.getOctokit(githubToken);
+            await octokit.rest.issues.createComment({
+                ...context.repo,
+                issue_number: pull_request_number,
+                body:
+                    "<!-- Comment made by Cargo Semver Cheks. (Please don't remove this comment or the action won't be able to update the comment) -->\n" +
+                    stdout,
+            });
+        } catch (error) {
+            core.setFailed(JSON.stringify(error));
+        }
+    }
 }
 
 async function installCargoSemverChecksFromPrecompiledBinary(): Promise<void> {
