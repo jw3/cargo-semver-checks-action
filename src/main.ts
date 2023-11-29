@@ -26,8 +26,12 @@ interface CommandOutput {
     returnCode: number;
 }
 
-async function runCommand(command: string, args: string[]): Promise<CommandOutput> {
-    return await _runCommand((options) => exec.exec(command, args, options));
+async function runCommand(
+    command: string,
+    args: string[],
+    options: Partial<exec.ExecOptions> = {}
+): Promise<CommandOutput> {
+    return await _runCommand((options) => exec.exec(command, args, options), options);
 }
 
 async function _runCommand(
@@ -252,11 +256,9 @@ async function run(): Promise<void> {
 
     // await installCargoSemverChecks(cargo);
     await runCommand("git", ["clone", "https://github.com/u9g/cargo-semver-checks"]);
-    await runCommand("cd", ["cargo-semver-checks"]);
-    await runCommand("git", ["switch", "-f", "output-json"]);
-    await runCommand("cargo", ["install", "--path", "."]);
-    await runCommand("cd", [".."]);
-    await runCommand("rm", ["rm", "-rf", "cargo-semver-checks"]);
+    await runCommand("git", ["switch", "-f", "output-json"], { cwd: "cargo-semver-checks" });
+    await runCommand("cargo", ["install", "--path", "."], { cwd: "cargo-semver-checks" });
+    await runCommand("rm", ["-rf", "cargo-semver-checks"]);
 
     const cache = new RustdocCache(
         cargo,
