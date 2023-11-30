@@ -192,7 +192,29 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
     );
 
     if (returnCode !== 0) {
-        runCommand("echo", ["::error file=src/lib.rs,line=1,col=1::Broke semver!"]);
+        try {
+            const context = github.context;
+            if (context.payload.pull_request == null) {
+                core.setFailed("No pull request found.");
+                return;
+            }
+            const pull_request_number = context.payload.pull_request.number;
+
+            const octokit = github.getOctokit(getGitHubToken());
+            await octokit.rest.issues.createComment({
+                ...context.repo,
+                issue_number: pull_request_number,
+                body:
+                    "<!-- Comment made by Cargo Semver Cheks. (Please don't remove this comment or the action won't be able to update the comment) -->\n" +
+                    "```" +
+                    stdout +
+                    "```",
+            });
+
+            core.setFailed("Cargo-Semver-Checks detected API breakage.");
+        } catch (error) {
+            core.setFailed(getErrorMessage(error));
+        }
     }
 }
 
