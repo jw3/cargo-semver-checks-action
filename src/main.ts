@@ -192,7 +192,15 @@ async function runCargoSemverChecks(cargo: rustCore.Cargo): Promise<void> {
     );
 
     try {
-        core.setOutput("cargo-semver-checks-output", stdout);
+        core.setOutput(
+            "cargo-semver-checks-output",
+            stdout.replace(
+                // remove formatting codes before making comment on github
+                // eslint-disable-next-line no-control-regex
+                /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+                ""
+            )
+        );
 
         if (returnCode !== 0) {
             core.setFailed("Cargo-Semver-Checks detected API breakage.");
