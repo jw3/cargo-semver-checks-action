@@ -263,6 +263,7 @@ async function run(): Promise<void> {
         manifestDir
     );
 
+    core.warn(`===================== :) =====================`);
     //await cache.restore();
     await runCargoSemverChecks(cargo);
     //await cache.save();
