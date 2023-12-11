@@ -263,9 +263,9 @@ async function run(): Promise<void> {
         manifestDir
     );
 
-    await cache.restore();
+    //await cache.restore();
     await runCargoSemverChecks(cargo);
-    await cache.save();
+    //await cache.save();
 }
 
 async function main() {
